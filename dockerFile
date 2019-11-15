@@ -1,0 +1,28 @@
+### STAGE 1: Build ###
+FROM node:8.11.1-alpine as builder
+# Preparing working environment.
+RUN mkdir -p /usr/src/bolehome
+WORKDIR /usr/src/bolehome
+
+# Installing dependencies.
+COPY package*.json /usr/src/bolehome/
+RUN npm install
+# Copy openhome-panel source into image.
+COPY . /usr/src/bolehome
+# Building app.
+RUN npm run-script build
+
+### STAGE 2: Setup ###
+FROM nginx:1.16.0-alpine
+# Removing nginx default page.
+RUN rm -rf /usr/share/nginx/html/*
+# Copying nginx configuration.
+COPY /nginx/nginx.conf /etc/nginx/conf.d/default.conf
+# Copying openhome-panel source into web server root.
+COPY --from=builder /usr/src/bolehome/dist /usr/share/nginx/html
+# Exposing ports.
+EXPOSE 80
+# Starting server.
+CMD [“nginx”, “-g”, “daemon off;”]
+
+# docker builf -t migutak/bolehome:1.0.0 .
